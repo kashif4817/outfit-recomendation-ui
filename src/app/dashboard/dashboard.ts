@@ -19,6 +19,13 @@ export class Dashboard {
       color: 'from-purple-500 to-pink-500'
     },
     {
+      title: 'Virtual Try-On',
+      description: 'Try clothes on your 3D avatar',
+      icon: 'avatar',
+      route: '/virtual-tryon',
+      color: 'from-cyan-500 to-blue-500'
+    },
+    {
       title: 'Generate Outfit',
       description: 'Create a perfect outfit for any occasion',
       icon: 'sparkles',

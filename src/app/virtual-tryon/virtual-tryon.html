@@ -1,0 +1,266 @@
+<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white p-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <button
+      (click)="goBack()"
+      class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl border border-white/20 transition-all duration-300"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Back
+    </button>
+
+    <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">
+      Virtual Try-On
+    </h1>
+
+    <button
+      (click)="showCustomization.set(!showCustomization())"
+      class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl border border-white/20 transition-all duration-300"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      Customize Avatar
+    </button>
+  </div>
+
+  <div class="flex gap-4 h-[calc(100vh-120px)]">
+    <!-- Left Sidebar - Wardrobe Items -->
+    <div class="w-80 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 p-4 overflow-hidden flex flex-col">
+      <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+        </svg>
+        Your Wardrobe
+      </h2>
+
+      <!-- Category Filter -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        @for (category of categories; track category) {
+          <button
+            (click)="filterByCategory(category)"
+            [class.bg-gradient-to-r]="selectedCategory() === category"
+            [class.from-purple-500]="selectedCategory() === category"
+            [class.to-pink-500]="selectedCategory() === category"
+            [class.bg-white/10]="selectedCategory() !== category"
+            class="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+          >
+            {{ category }}
+          </button>
+        }
+      </div>
+
+      <!-- Items List -->
+      <div class="flex-1 overflow-y-auto space-y-2">
+        @if (isLoading()) {
+          <div class="text-center py-8">
+            <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p class="mt-4 text-white/60">Loading items...</p>
+          </div>
+        } @else if (filteredItems.length === 0) {
+          <div class="text-center py-8">
+            <svg class="w-16 h-16 mx-auto text-white/40 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <p class="text-white/60">No items in this category</p>
+          </div>
+        } @else {
+          @for (item of filteredItems; track item.id) {
+            <div
+              class="bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 cursor-pointer transition-all duration-300 hover:scale-102 hover:border-purple-400/50"
+              (click)="applyItemToAvatar(item)"
+            >
+              <div class="flex gap-3">
+                <img
+                  [src]="item.cloudinaryUrl"
+                  [alt]="item.name"
+                  class="w-16 h-16 object-cover rounded-lg"
+                />
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-semibold truncate">{{ item.name }}</h3>
+                  <p class="text-sm text-white/60 truncate">{{ item.category }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div
+                      class="w-4 h-4 rounded-full border border-white/20"
+                      [style.background-color]="item.primaryColor"
+                    ></div>
+                    <span class="text-xs text-white/60">{{ item.primaryColor }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Center - 3D Avatar -->
+    <div class="flex-1 bg-white/5 backdrop-blur-lg rounded-3xl border border-white/20 p-4 relative">
+      <canvas
+        #canvas
+        class="w-full h-full rounded-2xl"
+      ></canvas>
+
+      <!-- Applied Items Overlay -->
+      <div class="absolute top-6 right-6 bg-black/50 backdrop-blur-md rounded-2xl p-4 border border-white/20 max-w-xs">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Currently Wearing
+        </h3>
+        <div class="space-y-2">
+          @if (appliedItems().top) {
+            <div class="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+              <span class="text-sm">{{ appliedItems().top!.name }}</span>
+              <button
+                (click)="removeItem('top')"
+                class="text-red-400 hover:text-red-300 transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          }
+          @if (appliedItems().bottom) {
+            <div class="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+              <span class="text-sm">{{ appliedItems().bottom!.name }}</span>
+              <button
+                (click)="removeItem('bottom')"
+                class="text-red-400 hover:text-red-300 transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          }
+          @if (appliedItems().shoes) {
+            <div class="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+              <span class="text-sm">{{ appliedItems().shoes!.name }}</span>
+              <button
+                (click)="removeItem('shoes')"
+                class="text-red-400 hover:text-red-300 transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          }
+          @if (appliedItems().outer) {
+            <div class="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+              <span class="text-sm">{{ appliedItems().outer!.name }}</span>
+              <button
+                (click)="removeItem('outer')"
+                class="text-red-400 hover:text-red-300 transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          }
+          @if (!appliedItems().top && !appliedItems().bottom && !appliedItems().shoes && !appliedItems().outer) {
+            <p class="text-sm text-white/40 text-center py-2">No items applied</p>
+          }
+        </div>
+        @if (appliedItems().top || appliedItems().bottom || appliedItems().shoes || appliedItems().outer) {
+          <button
+            (click)="clearAllClothing()"
+            class="w-full mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm font-medium transition-all duration-300"
+          >
+            Clear All
+          </button>
+        }
+      </div>
+
+      <!-- Controls Hint -->
+      <div class="absolute bottom-6 left-6 bg-black/50 backdrop-blur-md rounded-xl p-3 border border-white/20">
+        <p class="text-xs text-white/80 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Drag to rotate • Scroll to zoom • Right-click to pan
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Sidebar - Customization (Collapsible) -->
+    @if (showCustomization()) {
+      <div class="w-80 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 p-4 overflow-y-auto animate-slide-in">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          Avatar Customization
+        </h2>
+
+        <!-- Gender Selection -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2">Gender</label>
+          <div class="flex gap-2">
+            <button
+              (click)="changeGender('Male')"
+              [class.bg-gradient-to-r]="avatarCustomization().gender === 'Male'"
+              [class.from-purple-500]="avatarCustomization().gender === 'Male'"
+              [class.to-pink-500]="avatarCustomization().gender === 'Male'"
+              [class.bg-white/10]="avatarCustomization().gender !== 'Male'"
+              class="flex-1 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105"
+            >
+              Male
+            </button>
+            <button
+              (click)="changeGender('Female')"
+              [class.bg-gradient-to-r]="avatarCustomization().gender === 'Female'"
+              [class.from-purple-500]="avatarCustomization().gender === 'Female'"
+              [class.to-pink-500]="avatarCustomization().gender === 'Female'"
+              [class.bg-white/10]="avatarCustomization().gender !== 'Female'"
+              class="flex-1 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105"
+            >
+              Female
+            </button>
+          </div>
+        </div>
+
+        <!-- Skin Tone Selection -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2">Skin Tone</label>
+          <div class="grid grid-cols-3 gap-2">
+            @for (tone of skinTones; track tone.name) {
+              <button
+                (click)="changeSkinTone(tone.color)"
+                [class.ring-4]="avatarCustomization().skinTone === tone.color"
+                [class.ring-purple-400]="avatarCustomization().skinTone === tone.color"
+                class="relative group"
+              >
+                <div
+                  [style.background-color]="tone.color"
+                  class="w-full h-16 rounded-xl border-2 border-white/20 transition-all duration-300 group-hover:scale-105"
+                ></div>
+                <span class="text-xs mt-1 block">{{ tone.name }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="bg-blue-500/20 border border-blue-400/30 rounded-xl p-4">
+          <div class="flex gap-3">
+            <svg class="w-5 h-5 text-blue-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="text-sm text-blue-100">
+              <p class="font-medium mb-1">Pro Tip</p>
+              <p class="text-blue-200/80">Click on any wardrobe item to instantly see how it looks on your avatar!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

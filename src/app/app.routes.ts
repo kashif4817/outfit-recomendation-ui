@@ -36,6 +36,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'virtual-tryon',
+    loadComponent: () => import('./virtual-tryon/virtual-tryon').then(m => m.VirtualTryOn),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: 'login'
   }
